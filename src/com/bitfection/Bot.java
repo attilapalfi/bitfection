@@ -1,14 +1,10 @@
 package com.bitfection;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 
 import com.bitfection.game.GameChallenge;
@@ -19,6 +15,8 @@ import com.bitfection.game.GameScanDirectionResult;
 import com.bitfection.game.GameScanDistanceResult;
 import com.bitfection.game.IBot;
 
+
+// commit test LOL
 public class Bot implements IBot, Comparable<Bot> {
 	private GamePosition myPosition = new GamePosition();
 	private GamePosition myTask = null;
