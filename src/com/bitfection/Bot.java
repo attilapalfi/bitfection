@@ -190,11 +190,13 @@ public class Bot implements IBot, Comparable<Bot> {
 			Iterator<Bot> i = ClosestRobots.iterator();
 			// Assume that closest robot is the first in the set.
 			Bot minDistRobot = i.next();
-			int minDistance = minDistRobot.distance(myPosition.getX(), myPosition.getY());
+			// int minDistance = minDistRobot.distance(myPosition.getX(), myPosition.getY());
+			int minDistance = HigherIntelligence.DistanceBetween(this, minDistRobot);
 			
 			while (i.hasNext()) {
 				Bot tempMinDistRobot = i.next();
-				int tempMinDistance = tempMinDistRobot.distance(myPosition.getX(), myPosition.getY());
+				// int tempMinDistance = tempMinDistRobot.distance(myPosition.getX(), myPosition.getY());
+				int tempMinDistance = HigherIntelligence.DistanceBetween(this, minDistRobot); 
 				
 				if (tempMinDistance < minDistance) {
 					minDistance = tempMinDistance;
@@ -228,7 +230,9 @@ public class Bot implements IBot, Comparable<Bot> {
 	
 	
 	
-	
+	public GamePosition getPosition () {
+		return myPosition;
+	}
 	
 	public int getMyID () { return myID; }
 	
