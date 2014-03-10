@@ -1,6 +1,7 @@
 package com.bitfection;
 
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -16,19 +17,11 @@ import com.bitfection.game.GameScanDistanceResult;
 import com.bitfection.game.IBot;
 
 
-// commit test LOL
 public class Bot implements IBot, Comparable<Bot> {
 	private GamePosition myPosition = new GamePosition();
 	private GamePosition myTask = null;
-	private boolean firstTurn = true;
-	private int RobotCount;
-	private LinkedHashSet<Bot> MySlaves;
-	private LinkedHashSet<Bot> arrivedSlaves;
-	private Bot myMaster;
+	private Bot myFriend;
 	
-	private static LinkedHashSet<Bot> SlaveRobots;
-	private static LinkedHashSet<Bot> ClosestRobots;
-	private static LinkedHashSet<Bot> MasterRobots;
 	private static Queue<GamePosition> cloud_islandNeighbors;
 	private static int ID = 0;
 	private int myID = ID++;
@@ -45,34 +38,24 @@ public class Bot implements IBot, Comparable<Bot> {
 	@Override
 	public void onInit(GameChallenge gameChallenge, int iRobotCount, UUID iId, int iX, int iY, int iAreaWidth, int iAreaHeight) {
 		myPosition.setPosition(iX, iY);
-		RobotCount = iRobotCount;			
-		MySlaves = new LinkedHashSet<Bot>();
-		arrivedSlaves = new LinkedHashSet<Bot>();
-		
-		if (myID % 10 == 0) {
-			MasterRobots.add(this);	
-			System.out.println(myID + " I am Master!");
-		}
-		
-		else {
-			SlaveRobots.add(this);
-			ClosestRobots.add(this);
-			System.out.println(myID + " I am Slave.");
-		}		
+		System.out.println("Width: " + iAreaWidth + ", Height: " + iAreaHeight);
+		HigherIntelligence.addToAllRobots(this);
 	}
 	
 	@Override
-	public GameEvent onEvent(GameEvent gameEvent, int iCount) {
+	public GameEvent onEvent (GameEvent gameEvent, int iCount) {
 		
-		// First turn is different
-		if (firstTurn == true) {
-			firstTurn = false;
-			if (myID % 10 == 0)
-				findNineNearestBuddies();
-			
-			return GameEvent.IDLE;
+		if (myID == 0) {
+			try {
+				myFriend = HigherIntelligence.findByID(1);
+			} catch (RobotNotFoundException R) {
+				myFriend = HigherIntelligence.findNearest(this);
+			}
 		}
-				
+		
+		
+		
+		
 		
 		// If the robot dies
 		if (gameEvent != null && gameEvent == GameEvent.DEAD) {
@@ -81,56 +64,22 @@ public class Bot implements IBot, Comparable<Bot> {
 			return GameEvent.MARK;
 		}
 		
-		
-		
-		// Slave Robots go to their tasks
-		if (myID % 10 != 0) {
-			// If he has task
-			if(myTask != null) {
-				// But hasn't arrived, moves there
-				if (myPosition.getX() != myTask.getX() || myPosition.getY() != myTask.getY())
-					return GameEvent.MOVE(myTask.getX() - myPosition.getX(), myTask.getY() - myPosition.getY());
-				// If he arrived, does nothing
-				else {
-					myMaster.slaveArrived(this);
-					myTask = null;
-					return GameEvent.IDLE;
-				}
-			}
-			// if he doesn't have task, does nothing
+		else if (myTask == null) {
+			myTask = cloud_islandNeighbors.poll();
+			
+			if ((int) (Math.random() * 20) == 0)
+				return GameEvent.MARK;
 			else
-				return GameEvent.IDLE;
+				return GameEvent.MOVE(directions[(int) (Math.random() * 8)]);
+			
 		}
-		
-		// Master Robots are niggers
+				
 		else {
-			
-			// If all his slaves have arrived
-			if (allSlaveArrived()) {
-				
-				// If the Master Robot doesnt have a task, asks for one
-				myTask = cloud_islandNeighbors.poll();
-				
-				// If he doesn't get one, goes to some random position, or marks.
-				if (myTask == null) {				
-					if ((int) (Math.random() * 20) == 0)
-						return GameEvent.MARK;
-					else
-						return GameEvent.MOVE(directions[(int) (Math.random() * 8)]);
-				}
-				
-				// If he gets one starts going there
-				else {
-					if (myPosition.getX() != myTask.getX() || myPosition.getY() != myTask.getY())
-						return GameEvent.MOVE(myTask.getX() - myPosition.getX(), myTask.getY() - myPosition.getY());
-					else
-						return GameEvent.MARK;
-				}
-			}
-			
-			return GameEvent.SCAN_DIRECTION;
+			if (myPosition.getX() != myTask.getX() || myPosition.getY() != myTask.getY())
+				return GameEvent.MOVE(myTask.getX() - myPosition.getX(), myTask.getY() - myPosition.getY());
+			else
+				return GameEvent.MARK;
 		}
-		
 	}
 	
 	@Override
@@ -172,62 +121,8 @@ public class Bot implements IBot, Comparable<Bot> {
 	public void onSetupStaticEnvironment() {
 		System.out.println("onSetupStaticEnvironment");
 		cloud_islandNeighbors = new LinkedList<GamePosition>();
-		SlaveRobots = new LinkedHashSet<Bot>();
-		ClosestRobots = new LinkedHashSet<Bot>();
-		MasterRobots = new LinkedHashSet<Bot>();
+		HigherIntelligence.init();
 	}
-	
-	
-	
-	
-	// Master Robots call this method
-	private void findNineNearestBuddies () {		
-		// List for the closest robots.
-		LinkedHashSet<Bot> MySlaves = new LinkedHashSet<Bot>();
-		
-		
-		for (int j = 0; j < 9; j++) {
-			Iterator<Bot> i = ClosestRobots.iterator();
-			// Assume that closest robot is the first in the set.
-			Bot minDistRobot = i.next();
-			// int minDistance = minDistRobot.distance(myPosition.getX(), myPosition.getY());
-			int minDistance = HigherIntelligence.DistanceBetween(this, minDistRobot);
-			
-			while (i.hasNext()) {
-				Bot tempMinDistRobot = i.next();
-				// int tempMinDistance = tempMinDistRobot.distance(myPosition.getX(), myPosition.getY());
-				int tempMinDistance = HigherIntelligence.DistanceBetween(this, minDistRobot); 
-				
-				if (tempMinDistance < minDistance) {
-					minDistance = tempMinDistance;
-					minDistRobot = tempMinDistRobot;
-				}
-			}
-			
-			// Add the closest robot to the set of closest robots.
-			MySlaves.add(minDistRobot);
-			// Remove this robot from the set of all robots.
-			ClosestRobots.remove(minDistRobot);
-		}
-		
-		// Call the slaves to the master
-		Iterator<Bot> i = MySlaves.iterator();
-		while (i.hasNext()) {
-			Bot tempBot = i.next();
-			tempBot.setMyMaster(this);
-			tempBot.setTask(myPosition);
-		}
-		
-		
-		Iterator<Bot> j = MySlaves.iterator();
-		System.out.print("I am " + myID +". My slaves are: ");
-		while (j.hasNext()) {
-			System.out.print(j.next().getMyID() + " ");
-		}
-		System.out.println("");
-			
-	}
-	
 	
 	
 	public GamePosition getPosition () {
@@ -236,39 +131,9 @@ public class Bot implements IBot, Comparable<Bot> {
 	
 	public int getMyID () { return myID; }
 	
-	public int distance (int x, int y) {
-		int deltaX = Math.abs(x - myPosition.getX());
-		int deltaY = Math.abs(y - myPosition.getY());
-		return (int) Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-	}
 	
 	public void setTask (GamePosition GP) {
 		myTask = GP;
-	}
-
-	public Bot getMyMaster() {
-		return myMaster;
-	}
-
-	public void setMyMaster(Bot myMaster) {
-		this.myMaster = myMaster;
-	}
-
-	public LinkedHashSet<Bot> getMySlaves() {
-		return MySlaves;
-	}
-
-	public void setMySlaves(LinkedHashSet<Bot> mySlaves) {
-		MySlaves = mySlaves;
-	}
-	
-	public void slaveArrived (Bot b) {
-		arrivedSlaves.add(b);
-	}
-	
-	public boolean allSlaveArrived () {
-		System.out.println(MySlaves.equals(arrivedSlaves));
-		return MySlaves.equals(arrivedSlaves);
 	}
 	
 
