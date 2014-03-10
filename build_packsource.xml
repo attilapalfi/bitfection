@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="zip" default="zip" basedir=".">
+	<target name="zip">
+	<zip destfile="BitFectionSrc.zip"
+		basedir="src/com/bitfection"
+		includes="*.java"
+		update="false"/> 
+	</target>
+</project>
+
